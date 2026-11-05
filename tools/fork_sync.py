@@ -324,7 +324,9 @@ def build_report(cfg, state, intel, ctx, action, conflicts, overlay, build):
                       line.strip().startswith("PASS") or
                       "[fork-build]" in line or
                       "checks, 0 failures" in line)]
-        summary = " / ".join(signal[-10:])[:700] or "无关键输出"
+        summary = " / ".join(signal[-10:]) or "无关键输出"
+        if len(summary) > 700:
+            summary = summary[:700].rsplit(" / ", 1)[0] or summary[:700]
         lines += ["## 构建", "",
                   "- 返回码：`{}`".format(build.get("returncode")),
                   "- 关键结果：{}".format(summary),
