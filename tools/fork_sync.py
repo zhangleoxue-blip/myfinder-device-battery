@@ -455,6 +455,7 @@ def command_sync(cfg, args):
                     action = "build-failed"
 
         ctx = git_context(cfg)
+        state.pop("error", None)
         state["lastSyncUtc"] = utcnow()
         state["remoteState"] = remote_state
         if action in ("rebased", "up-to-date", "build-failed"):
