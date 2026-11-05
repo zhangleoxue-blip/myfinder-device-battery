@@ -159,12 +159,19 @@ def collect_intel(cfg):
 
 def git_context(cfg):
     upstream_ref = cfg["upstream"]["remote"] + "/" + cfg["upstream"]["branch"]
+    # Build artifacts are intentionally untracked. Only real fork source edits
+    # should block a rebase, so filter known generated paths explicitly.
+    status_lines = [line for line in git(cfg, "status", "--porcelain").stdout.splitlines()
+                    if line.strip()]
+    ignored = tuple(cfg["sync"].get("ignoreDirtyPaths", []))
+    dirty_lines = [line for line in status_lines
+                   if not any(line[3:].strip().startswith(prefix) for prefix in ignored)]
     ctx = {
         "branch": git(cfg, "rev-parse", "--abbrev-ref", "HEAD").stdout.strip(),
         "forkHead": git(cfg, "rev-parse", "HEAD").stdout.strip(),
         "upstreamSha": "",
         "customCommits": 0,
-        "dirty": git(cfg, "status", "--porcelain").stdout.strip(),
+        "dirty": "\n".join(dirty_lines),
         "upstreamRef": upstream_ref,
     }
     probe = git(cfg, "rev-parse", upstream_ref, check=False)
