@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "upstream": {
+    "owner": "wushuai0802",
+    "repo": "myfinder-device-battery",
+    "branch": "main",
+    "remote": "upstream",
+    "url": "https://github.com/wushuai0802/myfinder-device-battery.git",
+    "api": "https://api.github.com",
+    "raw": "https://raw.githubusercontent.com"
+  },
+  "fork": {
+    "branch": "fork/main",
+    "origin": "",
+    "appId": "myfinder-device-battery"
+  },
+  "sync": {
+    "strategy": "rebase",
+    "disableProxy": true,
+    "autoBuild": false,
+    "maxCommitsInReport": 15
+  },
+  "gitExecutable": "C:/Users/admin/AppData/Local/Programs/WorkBuddy/resources/vendor/PortableGit/mingw64/bin/git.exe",
+  "paths": {
+    "state": "logs/fork/sync-state.json",
+    "report": "logs/fork/last-report.md",
+    "history": "logs/fork/sync-history.jsonl",
+    "changelog": "logs/fork/upstream-changelog.md",
+    "overlayReport": "logs/fork/overlay-report.json",
+    "overlay": "overlay",
+    "patches": "overlay/patches",
+    "keys": "logs/fork/keys",
+    "buildOutput": "outputs/fork-build",
+    "packageOutput": "outputs/fork-release"
+  }
+}

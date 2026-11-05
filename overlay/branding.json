@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "displayName": "MyFinder Device Battery (Fork Build)",
+  "publisher": "local-fork",
+  "productName": "MyFinder Device Battery",
+  "appId": "myfinder-device-battery",
+  "policy": "additive-only",
+  "policyNote": "Do not rename AppId, package ZIP name, or the upstream release API URL. The built-in one-click updater points at the upstream Releases endpoint; keeping those values intact is what lets an installed fork build follow upstream releases automatically.",
+  "appliedTo": [],
+  "customFiles": [
+    "FORK-README.md",
+    "fork-config.json",
+    "tools/",
+    "overlay/",
+    "docs/fork/",
+    ".github/workflows/fork-sync.yml"
+  ]
+}
