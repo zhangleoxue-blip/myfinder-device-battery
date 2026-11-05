@@ -79,7 +79,7 @@ def git_executable(cfg):
     raise SyncError("git executable not found; set gitExecutable in fork-config.json")
 
 
-def git(cfg, *args, check=True):
+def git(cfg, *args, check=True, timeout=180):
     cmd = [git_executable(cfg)]
     if cfg["sync"].get("disableProxy", True):
         cmd += ["-c", "http.proxy=", "-c", "https.proxy="]
@@ -88,8 +88,12 @@ def git(cfg, *args, check=True):
     for key in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy",
                 "ALL_PROXY", "all_proxy"):
         env[key] = ""
-    proc = subprocess.run(cmd, cwd=str(ROOT), env=env, capture_output=True,
-                          text=True, encoding="utf-8", errors="replace")
+    try:
+        proc = subprocess.run(cmd, cwd=str(ROOT), env=env, capture_output=True,
+                              text=True, encoding="utf-8", errors="replace",
+                              timeout=timeout)
+    except subprocess.TimeoutExpired:
+        raise SyncError("git {} timed out after {}s".format(" ".join(args), timeout))
     if check and proc.returncode != 0:
         detail = (proc.stderr or proc.stdout or "").strip()[:600]
         raise SyncError("git {} failed ({}): {}".format(" ".join(args), proc.returncode, detail))
@@ -283,6 +287,9 @@ def build_report(cfg, state, intel, ctx, action, conflicts, overlay, build):
     ]
     if intel["apiError"]:
         lines += ["> GitHub API 读取失败：{}。本地 git 信息仍然有效。".format(intel["apiError"]), ""]
+    if state.get("lastFetchError"):
+        lines += ["> 远端刷新失败：{}。本次基于本地 upstream 引用完成，下次成功刷新后会自动补齐。".format(
+            state["lastFetchError"]), ""]
 
     lines += ["## 最近上游提交", ""]
     if intel["recentCommits"]:
@@ -408,11 +415,24 @@ def command_sync(cfg, args):
         if ctx["dirty"]:
             raise SyncError("worktree has uncommitted changes; commit or stash them before --sync")
 
-        git(cfg, "fetch", cfg["upstream"]["remote"])
+        # A failed remote refresh must not discard a valid local baseline.
+        # Degrade to the local tracking ref but surface the failure in the report.
+        try:
+            fetched = git(cfg, "fetch", cfg["upstream"]["remote"],
+                          check=False, timeout=90)
+            fetch_error = "" if fetched.returncode == 0 else \
+                (fetched.stderr or fetched.stdout or "").strip()[:300]
+        except SyncError as exc:
+            fetch_error = str(exc)
+        state["lastFetchError"] = fetch_error
+        if fetch_error:
+            print("[sync] WARNING: remote refresh failed; using local upstream ref: {}".format(
+                fetch_error), file=sys.stderr)
+
         ctx = git_context(cfg)
         target = ctx["upstreamSha"]
         if not target:
-            raise SyncError("upstream tracking ref is missing after fetch")
+            raise SyncError("no local upstream baseline; a successful fetch is required")
 
         base = git(cfg, "merge-base", "HEAD", ctx["upstreamRef"]).stdout.strip()
         if base == target:
