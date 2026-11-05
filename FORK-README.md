@@ -86,21 +86,24 @@ $PY tools/fork_overlay.py verify  # 检查 fork 新增文件是否齐全
 2. **不要改公钥**：`overlay/patches/trust-key.json` 默认关闭，启用它会破坏与上游签名发行包的兼容性，并制造持续的 rebase 冲突。
 3. **设备读数需真机验证**：上游大量新增型号标注「尚未实机验证」。同步只代表代码到位，不代表你的鼠标/耳机一定能读出正确电量。
 
-## 后续：接到你自己的 GitHub 仓库
+## 后续：推送到 `zhangleoxue-blip/myfinder-device-battery`
 
-这是目前唯一需要你提供信息的一步——本机没有 GitHub 令牌或 `gh` CLI，我也无法替你登录。
+**已完成**：`fork-config.json` 的 `fork.origin` 与本地 `origin` remote 均已指向该 fork（已确认它是上游的真实 fork，默认分支 `main`），本地 `fork/main` 的定制提交已就绪。
 
-1. 在 GitHub 网页 Fork `wushuai0802/myfinder-device-battery`，复制你的仓库地址。
-2. 运行（自动更新 `fork-config.json`、添加 `origin`、推送 `fork/main`）：
+**唯一剩余步骤是 GitHub 认证**：本机没有 token、没有 `gh` CLI，Windows 凭据管理器里也没有 GitHub 条目；非交互推送已确认连接正常，只在 `could not read Username` 处停止。
+
+方式 A（推荐，不暴露 token）——在你自己的 PowerShell 窗口运行：
 
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\fork_bootstrap.ps1 -OriginUrl "https://github.com/<你的账号>/myfinder-device-battery.git"
+cd D:\WorkBuddy\2026-11-05-16-03-40\myfinder-fork
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\fork_bootstrap.ps1 -OriginUrl "https://github.com/zhangleoxue-blip/myfinder-device-battery.git"
 ```
 
-首次推送若提示认证，需要你提供 Personal Access Token 或在浏览器完成 Git Credential Manager 登录；只想先配置不推送可加 `-SkipPush`。
+Git Credential Manager 会打开浏览器登录窗口，完成后自动推送。脚本已内置清空代理环境变量；`-SkipPush` 只做配置，`-NonInteractive` 禁止弹窗。
 
-3. 在 fork 仓库 Settings → Actions → General 把 Workflow permissions 设为 **Read and write**，并在 Actions 页启用 `Fork upstream sync`（fork 仓库的定时任务默认关闭）。
-4. 等下一次上游提交，检查 `logs/fork/sync-history.jsonl` 是否出现 `action=rebased`。
+方式 B：提供一个有 `repo` 权限的短期 Personal Access Token，我用 `http.extraheader` 临时推送（不写入 `.git/config`），用完请立即撤销。
+
+推送后：Settings → Actions → General 把 Workflow permissions 设为 **Read and write**，在 Actions 页启用 `Fork upstream sync`（fork 仓库的定时任务默认是关闭的），再检查 `logs/fork/sync-history.jsonl` 是否出现 `action=rebased`。
 
 ## 自检
 

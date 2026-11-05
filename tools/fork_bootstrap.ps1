@@ -1,27 +1,50 @@
 param(
     [Parameter(Mandatory=$true)][string]$OriginUrl,
-    [switch]$SkipPush
+    [switch]$SkipPush,
+    [switch]$NonInteractive
 )
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
+
+# PowerShell launched outside Git Bash has no git on PATH on this machine,
+# and the global http.proxy points at an offline local port.
+$gitExe = 'C:\Users\admin\AppData\Local\Programs\WorkBuddy\resources\vendor\PortableGit\mingw64\bin\git.exe'
+if (-not (Test-Path -LiteralPath $gitExe)) {
+    $found = Get-Command git -ErrorAction SilentlyContinue
+    if (-not $found) { throw 'git executable not found; install Git or edit this script.' }
+    $gitExe = $found.Source
+}
+# Environment-level proxies also affect git even when http.proxy is cleared.
+foreach ($name in @('HTTP_PROXY','http_proxy','HTTPS_PROXY','https_proxy','ALL_PROXY','all_proxy')) {
+    Remove-Item -LiteralPath ('Env:' + $name) -ErrorAction SilentlyContinue
+}
+if ($NonInteractive) {
+    $env:GIT_TERMINAL_PROMPT = '0'
+    $env:GCM_INTERACTIVE = 'never'
+}
+
 Push-Location $root
 try {
+    # Patch only the origin value so the rest of the JSON formatting survives.
     $configPath = Join-Path $root 'fork-config.json'
-    $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
-    $config.fork.origin = $OriginUrl
-    $utf8 = New-Object Text.UTF8Encoding($false)
-    [IO.File]::WriteAllText($configPath, ($config | ConvertTo-Json -Depth 6), $utf8)
+    $text = [IO.File]::ReadAllText($configPath)
+    $pattern = '("origin"\s*:\s*")[^"]*(")'
+    if ($text -notmatch $pattern) { throw 'fork.origin key not found in fork-config.json.' }
+    $replacement = '${1}' + $OriginUrl + '${2}'
+    $updated = [regex]::Replace($text, $pattern, $replacement)
+    [IO.File]::WriteAllText($configPath, $updated, (New-Object Text.UTF8Encoding($false)))
     Write-Host "[fork-bootstrap] fork-config.json -> origin = $OriginUrl"
 
-    $remotes = @(git remote)
-    if ($remotes -contains 'origin') { git remote set-url origin $OriginUrl }
-    else { git remote add origin $OriginUrl }
+    $remotes = @(& $gitExe remote)
+    if ($remotes -contains 'origin') { & $gitExe remote set-url origin $OriginUrl }
+    else { & $gitExe remote add origin $OriginUrl }
     Write-Host '[fork-bootstrap] origin remote configured.'
 
     if ($SkipPush) {
-        Write-Host '[fork-bootstrap] push skipped (-SkipPush); run git push -u origin fork/main when ready.'
+        Write-Host '[fork-bootstrap] push skipped (-SkipPush).'
+        Write-Host '[fork-bootstrap] Run again without -SkipPush to push; Git Credential Manager will open a sign-in window.'
     } else {
-        git push -u origin fork/main
+        & $gitExe -c http.proxy= -c https.proxy= push -u origin fork/main
         if ($LASTEXITCODE -ne 0) { throw "push failed with exit code $LASTEXITCODE" }
         Write-Host '[fork-bootstrap] fork/main pushed.'
     }
