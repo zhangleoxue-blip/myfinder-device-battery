@@ -13,9 +13,9 @@
 ## 阶段 1 — 让同步真正无人值守
 
 1. 在 GitHub 上 fork 上游仓库到你自己的账号（浏览器操作，需要你的账号）。
-2. 把 `fork-config.json` 的 `fork.origin` 填成你的仓库地址。
-3. 把 `fork/main` 推上去，在仓库 Settings 里给 Actions 开 `contents: write` 权限。
-4. 启用 `.github/workflows/fork-sync.yml`（默认每小时第 17 分钟运行）。
+2. 运行 `powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\fork_bootstrap.ps1 -OriginUrl "<你的仓库地址>"`：自动更新 `fork-config.json` 的 `fork.origin`、添加 `origin` remote、推送 `fork/main`。无凭据时加 `-SkipPush` 只做本地配置。
+3. 在仓库 Settings → Actions → General 把 Workflow permissions 设为 **Read and write**（对应 workflow 的 `contents: write`）。
+4. 在 Actions 页启用 `.github/workflows/fork-sync.yml`（默认每小时第 17 分钟运行）。注意 fork 仓库的 scheduled workflow 默认是关闭的，必须手动启用。
 5. 等下一次上游提交，验证一次真实 rebase：检查 `logs/fork/sync-history.jsonl` 是否出现 `action=rebased`，以及 `fork/main` 是否包含上游新提交。
 
 **风险**：Actions 的定时调度在 fork 仓库默认可能是禁用状态，需手动启用；且 GitHub 对长时间无活动的仓库会暂停 schedule。
