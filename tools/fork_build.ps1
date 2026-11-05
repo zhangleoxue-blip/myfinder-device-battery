@@ -66,8 +66,9 @@ if ($buildFailed) {
     $probeExe = Join-Path $OutputDirectory 'AtkBatteryProbe.exe'
     $compiled = (Test-Path -LiteralPath $appExe -PathType Leaf) -and (Test-Path -LiteralPath $probeExe -PathType Leaf)
     if ($AllowMissingPwsh -and (-not $hasPwsh) -and $compiled) {
-        Write-Warning "[fork-build] PARTIAL SUCCESS: compilation and offline self-tests finished; full regression needs PowerShell 7. Reason: $buildError"
-        Write-Warning '[fork-build] build-info.json was NOT produced. Do not package from this output; use CI or install PowerShell 7.'
+        Write-Host '[fork-build][PARTIAL SUCCESS] compilation and offline self-tests finished; full regression needs PowerShell 7.'
+        Write-Host "[fork-build][REASON] $buildError"
+        Write-Host '[fork-build][NOTE] build-info.json was NOT produced; do not package from this output.'
     } else {
         throw "Upstream build failed: $buildError"
     }
