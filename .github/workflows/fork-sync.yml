@@ -28,11 +28,21 @@ jobs:
         with:
           python-version: '3.12'
 
+      - name: Configure git identity for replayed commits
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
       - name: Register the upstream remote
         shell: bash
         run: |
           git remote remove upstream 2>/dev/null || true
           git remote add upstream https://github.com/wushuai0802/myfinder-device-battery.git
+
+      - name: Self-check the overlay patch replayer
+        shell: bash
+        run: python tools/test_fork_overlay.py
 
       - name: Rebase fork/main onto upstream/main
         shell: bash
@@ -48,7 +58,10 @@ jobs:
 
       - name: Push the synced branch
         shell: bash
-        run: git push origin HEAD:fork/main
+        # Rebase rewrites the SHA of every fork-only commit, so a plain push is
+        # rejected as non-fast-forward. --force-with-lease keeps the safety
+        # check while allowing the rewritten dedicated sync branch.
+        run: git push --force-with-lease origin HEAD:fork/main
 
       - name: Upload the sync report
         if: always()
