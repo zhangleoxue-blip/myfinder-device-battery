@@ -92,14 +92,20 @@ $PY tools/fork_overlay.py verify  # 检查 fork 新增文件是否齐全
 
 **唯一剩余步骤是 GitHub 认证**：本机没有 token、没有 `gh` CLI，Windows 凭据管理器里也没有 GitHub 条目；非交互推送已确认连接正常，只在 `could not read Username` 处停止。
 
-方式 A（推荐，不暴露 token）——在你自己的 PowerShell 窗口运行：
+方式 A（推荐，不暴露 token）：
+
+1. **启动 Clash**，确认 `7890` 端口在监听。当前网络诊断：直连 `github.com` 超时、WorkBuddy 注入的 2475 代理返回 502、`7890` 未启动，所以必须走 Clash：
+   `Test-NetConnection 127.0.0.1 -Port 7890 | Select-Object TcpTestSucceeded`
+2. 在 PowerShell 窗口运行（**不要直接敲 `git`**：本机 PowerShell 的 PATH 里没有 git，脚本内部使用绝对路径）：
 
 ```powershell
 cd D:\WorkBuddy\2026-11-05-16-03-40\myfinder-fork
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\fork_bootstrap.ps1 -OriginUrl "https://github.com/zhangleoxue-blip/myfinder-device-battery.git"
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\fork_bootstrap.ps1 -OriginUrl "https://github.com/zhangleoxue-blip/myfinder-device-battery.git" -ProxyUrl "http://127.0.0.1:7890"
 ```
 
-Git Credential Manager 会打开浏览器登录窗口，完成后自动推送。脚本已内置清空代理环境变量；`-SkipPush` 只做配置，`-NonInteractive` 禁止弹窗。
+3. Git Credential Manager 会弹出**一次** GitHub 授权窗口（浏览器已登录的话点一下 Authorize 即可；网页登录不等于 git 凭据已缓存）。看到 `[fork-bootstrap] fork/main pushed.` 即成功。
+
+不加 `-ProxyUrl` 时脚本走直连并清空所有代理环境变量，仅在直连可用时使用；`-SkipPush` 只做配置，`-NonInteractive` 禁止弹窗。
 
 方式 B：提供一个有 `repo` 权限的短期 Personal Access Token，我用 `http.extraheader` 临时推送（不写入 `.git/config`），用完请立即撤销。
 
