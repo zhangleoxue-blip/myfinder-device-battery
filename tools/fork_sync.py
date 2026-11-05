@@ -211,6 +211,8 @@ def run_build(cfg):
     script = ROOT / "tools" / "fork_build.ps1"
     args = [powershell, "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script),
             "-OutputDirectory", str(ROOT / cfg["paths"]["buildOutput"])]
+    if cfg["sync"].get("allowMissingPwsh", False):
+        args.append("-AllowMissingPwsh")
     try:
         proc = subprocess.run(args, cwd=str(ROOT), capture_output=True, text=True,
                               encoding="utf-8", errors="replace", timeout=900)
