@@ -66,6 +66,20 @@ $PY tools/fork_overlay.py verify  # 检查 fork 新增文件是否齐全
 | `docs/fork/` | 架构、合规、路线图 |
 | `.github/workflows/fork-sync.yml` | 每小时自动同步 + 推送 + 上传报告 |
 
+## 本机环境适配（已固化进脚本）
+
+这台机器有三个会卡住上游构建的环境问题，都已写进工具脚本，不需要你手动处理：
+
+| 问题 | 影响 | 处理位置 |
+| --- | --- | --- |
+| git 全局 `http.proxy=http://127.0.0.1:7890` 指向离线代理，但直连 GitHub 可用 | `git fetch` 挂起 | `fork_sync.py` 对所有 git 调用强制 `-c http.proxy= -c https.proxy=` |
+| PowerShell 的 `python` 解析到 Microsoft Store 存根 `WindowsApps\python.exe` | 设备数据包校验失败 | `fork_build.ps1` 自动把真实 Python 3.13 目录前置到 PATH |
+| 本机只有 PowerShell 5.1，没有 `pwsh.exe`（PowerShell 7） | 上游安装器跨版本回归失败，`build-info.json` 不生成 | `fork_build.ps1` 的 `-AllowMissingPwsh` 显式标记为「部分成功」；`fork-config.json` 的 `sync.allowMissingPwsh` 已开启 |
+
+**部分成功的含义**：编译、`--self-test`、`--preview` 和绝大多数回归测试都跑过了（`AtkMouseBattery.exe` 是可运行的），但完整 `tests/Run.ps1` 未跑完，因此**不能从这个输出执行 `-Package` 打包**。要出完整发行包，请在装有 PowerShell 7 的机器或 GitHub Actions 的 `windows-latest` 上构建（那里自带 pwsh）。
+
+本机实测通过的主要回归：51 项离线测试、106 项设备数据包发布检查、85948 项配置契约检查、167875 项更新角标检查、309 项通用电量检查、191 项托盘交互检查。
+
 ## 必须知道的三件事
 
 1. **许可**：AGPL-3.0-only。再分发必须同许可开源并提供完整源码地址，不能闭源。清单见 `docs/fork/COMPLIANCE.md`。
