@@ -87,6 +87,9 @@ tools/fork_build.ps1
 | `Get-Command python` 命中 WindowsApps 存根 | `fork_build.ps1` 把真实 Python 目录前置到 PATH，子进程继承 |
 | 同时存在 `HTTP_PROXY` 与 `http_proxy` | .NET `ProcessStartInfo.EnvironmentVariables` 抛重复键异常；构建前清除全部代理变量 |
 | 本机缺 `pwsh.exe` | 上游安装器跨版本回归失败；`-AllowMissingPwsh` 标记部分成功并禁止从该输出打包，完整构建交给 CI |
+| CI 里 rebase 重放定制提交 | 必须预置 git `user.name` / `user.email`，否则报 `Committer identity unknown`；工作流已配置 bot 身份 |
+| rebase 改写定制提交 SHA 后推送 | 普通 push 被判 non-fast-forward；工作流改用 `git push --force-with-lease origin HEAD:fork/main` |
+| 补丁机制本身未被验证 | `tools/test_fork_overlay.py` 在临时目录验证应用、幂等与锚点消失检测，CI 每次同步前执行 |
 
 ## 7. 尚未覆盖的部分
 

@@ -86,6 +86,28 @@ $PY tools/fork_overlay.py verify  # 检查 fork 新增文件是否齐全
 2. **不要改公钥**：`overlay/patches/trust-key.json` 默认关闭，启用它会破坏与上游签名发行包的兼容性，并制造持续的 rebase 冲突。
 3. **设备读数需真机验证**：上游大量新增型号标注「尚未实机验证」。同步只代表代码到位，不代表你的鼠标/耳机一定能读出正确电量。
 
-## 后续
+## 后续：接到你自己的 GitHub 仓库
 
-`fork-config.json` 的 `fork.origin` 填上你自己的 GitHub 仓库地址后，把 `fork/main` 推上去并启用 `fork-sync.yml`，即可实现无人值守同步。分阶段计划见 `docs/fork/ROADMAP.md`。
+这是目前唯一需要你提供信息的一步——本机没有 GitHub 令牌或 `gh` CLI，我也无法替你登录。
+
+1. 在 GitHub 网页 Fork `wushuai0802/myfinder-device-battery`，复制你的仓库地址。
+2. 运行（自动更新 `fork-config.json`、添加 `origin`、推送 `fork/main`）：
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools\fork_bootstrap.ps1 -OriginUrl "https://github.com/<你的账号>/myfinder-device-battery.git"
+```
+
+首次推送若提示认证，需要你提供 Personal Access Token 或在浏览器完成 Git Credential Manager 登录；只想先配置不推送可加 `-SkipPush`。
+
+3. 在 fork 仓库 Settings → Actions → General 把 Workflow permissions 设为 **Read and write**，并在 Actions 页启用 `Fork upstream sync`（fork 仓库的定时任务默认关闭）。
+4. 等下一次上游提交，检查 `logs/fork/sync-history.jsonl` 是否出现 `action=rebased`。
+
+## 自检
+
+```bash
+$PY tools/test_fork_overlay.py   # 补丁重放：应用 / 幂等 / 锚点消失检测（3 项）
+```
+
+CI 工作流已内置这一步，并修掉了两个会直接导致失败的点：rebase 重放提交必须预置 git 身份；rebase 改写历史后普通 `git push` 会被判 non-fast-forward，已改为 `--force-with-lease`。
+
+分阶段计划见 `docs/fork/ROADMAP.md`。
