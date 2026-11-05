@@ -83,6 +83,10 @@ tools/fork_build.ps1
 | 补丁锚点消失 | 报告标 `failed`，退出码非 0，需人工复核 |
 | 上游改了 `Package.ps1` 的哈希清单规则 | 新增的非 `.cs` 文件不受影响；新增 `.cs` 会进清单，属预期行为 |
 | 上游把 `ApiUrl` 改成自己的新地址 | 二进制层同步自动跟随，无需 fork 侧改动 |
+| 全局 git 代理指向离线端口 | 所有 git 调用强制清空 `http.proxy` / `https.proxy`（本机直连可用） |
+| `Get-Command python` 命中 WindowsApps 存根 | `fork_build.ps1` 把真实 Python 目录前置到 PATH，子进程继承 |
+| 同时存在 `HTTP_PROXY` 与 `http_proxy` | .NET `ProcessStartInfo.EnvironmentVariables` 抛重复键异常；构建前清除全部代理变量 |
+| 本机缺 `pwsh.exe` | 上游安装器跨版本回归失败；`-AllowMissingPwsh` 标记部分成功并禁止从该输出打包，完整构建交给 CI |
 
 ## 7. 尚未覆盖的部分
 
