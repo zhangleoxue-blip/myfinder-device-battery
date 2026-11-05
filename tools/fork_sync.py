@@ -320,10 +320,11 @@ def build_report(cfg, state, intel, ctx, action, conflicts, overlay, build):
     if build and build.get("attempted"):
         raw_lines = ((build.get("stdout") or "") + "\n" + (build.get("stderr") or "")).splitlines()
         signal = [line.strip() for line in raw_lines
-                  if line.strip() and "warning CS" not in line
-                  and any(word in line for word in
-                          ("PASS", "FAIL", "PARTIAL", "succeeded", "failed", "checks,"))]
-        summary = " / ".join(signal[-8:])[:700] or "无关键输出"
+                  if line.strip() and (
+                      line.strip().startswith("PASS") or
+                      "[fork-build]" in line or
+                      "checks, 0 failures" in line)]
+        summary = " / ".join(signal[-10:])[:700] or "无关键输出"
         lines += ["## 构建", "",
                   "- 返回码：`{}`".format(build.get("returncode")),
                   "- 关键结果：{}".format(summary),
