@@ -19,6 +19,7 @@
     "disableProxy": true,
     "autoBuild": false,
     "allowMissingPwsh": true,
+    "ignoreDirtyPaths": ["outputs/", "logs/", "tmp/"],
     "maxCommitsInReport": 15
   },
   "gitExecutable": "C:/Users/admin/AppData/Local/Programs/WorkBuddy/resources/vendor/PortableGit/mingw64/bin/git.exe",
