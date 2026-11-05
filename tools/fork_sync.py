@@ -224,8 +224,8 @@ def run_build(cfg):
         proc = subprocess.run(args, cwd=str(ROOT), capture_output=True, text=True,
                               encoding="utf-8", errors="replace", timeout=900)
         return {"attempted": True, "returncode": proc.returncode,
-                "stdout": (proc.stdout or "").strip()[-1500:],
-                "stderr": (proc.stderr or "").strip()[-1500:]}
+                "stdout": (proc.stdout or "")[-12000:],
+                "stderr": (proc.stderr or "")[-4000:]}
     except subprocess.TimeoutExpired:
         return {"attempted": True, "returncode": -1,
                 "stdout": "", "stderr": "Build exceeded the 900 second timeout."}
@@ -311,9 +311,15 @@ def build_report(cfg, state, intel, ctx, action, conflicts, overlay, build):
             "", "已执行 `git rebase --abort`，工作区恢复到同步前状态。", ""]
 
     if build and build.get("attempted"):
+        raw_lines = ((build.get("stdout") or "") + "\n" + (build.get("stderr") or "")).splitlines()
+        signal = [line.strip() for line in raw_lines
+                  if line.strip() and "warning CS" not in line
+                  and any(word in line for word in
+                          ("PASS", "FAIL", "PARTIAL", "succeeded", "failed", "checks,"))]
+        summary = " / ".join(signal[-8:])[:700] or "无关键输出"
         lines += ["## 构建", "",
                   "- 返回码：`{}`".format(build.get("returncode")),
-                  "- 输出：{}".format((build.get("stdout") or build.get("stderr") or "").strip()[:600] or "无"),
+                  "- 关键结果：{}".format(summary),
                   ""]
 
     lines += [
