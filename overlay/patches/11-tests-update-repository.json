@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "id": "tests-update-repository",
+  "enabled": true,
+  "target": "tests/UpdateTests.cs",
+  "strategy": "regex-replace",
+  "pattern": "Url=(?:\"https://github\\.com/[A-Za-z0-9_.-]+/myfinder-device-battery/releases/download/v\"|UpdateTrust\\.Repository\\+\"/releases/download/v\")\\+version",
+  "template": "Url=UpdateTrust.Repository+\"/releases/download/v\"+version",
+  "rationale": "UpdateCatalog.ValidateAssets checks every asset URL against UpdateTrust.Repository. 03-release-channel.json repoints that constant at the LeoZhang repository, so the test fixture must derive its URL from the same constant. Without this, UpdateChecker.Check silently returns null and UpdateTests.Main throws a NullReferenceException.",
+  "compliance": "Test-only change; no production behaviour is relaxed. The intentionally foreign URL at the 'foreign repository asset' rejection case is left untouched.",
+  "note": "The pattern accepts both the original literal and the new expression, so a replay is a no-op."
+}

@@ -35,7 +35,7 @@
     "overlayReport": "logs/fork/overlay-report.json",
     "overlay": "overlay",
     "patches": "overlay/patches",
-    "keys": "logs/fork/keys",
+    "keys": "overlay/keys",
     "buildOutput": "outputs/fork-build",
     "packageOutput": "outputs/fork-release"
   }

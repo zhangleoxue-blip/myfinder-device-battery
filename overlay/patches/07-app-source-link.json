@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "app-source-link",
+  "enabled": true,
+  "target": "scripts/PopupPages.cs",
+  "strategy": "regex-replace",
+  "pattern": "source\\.Detail=\"[^\"]+\";",
+  "template": "source.Detail=\"https://github.com/\\nzhangleoxue-blip/\\nmyfinder-device-battery\";",
+  "rationale": "The in-app About page must show the source of the build the user actually installed. The three-line \\n split is preserved so the narrow panel still wraps the URL correctly.",
+  "compliance": "AGPL-3.0-only section 13 / section 5(a): users must be able to reach the Corresponding Source of THIS derivative. The original upstream URL remains in CREDITS.md, LICENSE and THIRD_PARTY_NOTICES.md."
+}

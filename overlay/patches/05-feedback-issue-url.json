@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "id": "feedback-issue-url",
+  "enabled": false,
+  "blockedBy": "Disabled together with 04-feedback-relay: FeedbackClient.IssueUrl is only used to validate relay receipts, and tests/FeedbackFormTests.cs hardcodes the upstream issue URL. Keep the feedback subsystem untouched.",
+  "target": "scripts/FeedbackForm.cs",
+  "strategy": "regex-replace",
+  "pattern": "\"https://github\\.com/[A-Za-z0-9_.-]+/myfinder-device-battery/issues/\"",
+  "template": "\"https://github.com/zhangleoxue-blip/myfinder-device-battery/issues/\"",
+  "rationale": "FeedbackClient.IsIssueUrl validates relay receipts against this base. Even with the relay disabled, keeping it pointed at upstream would be misleading if the relay is ever re-enabled.",
+  "compliance": "Pure URL substitution; no upstream copyright or attribution is removed."
+}

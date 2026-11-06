@@ -226,7 +226,7 @@ namespace AtkBatteryTray {
                 else if(!String.IsNullOrEmpty(owner.GenericError))rows.Add(Info("读取器状态","暂不可用，详情见诊断摘要"));
                 else if(!String.IsNullOrEmpty(owner.GenericIdleSummary))rows.Add(Info("读取器健康",owner.GenericIdleSummary));
                 rows.Add(Info("许可证","AGPL-3.0-only"));rows.Add(Info("无担保","按现状提供"));
-                var source=Info("源码",null);source.Detail="https://github.com/\nwushuai0802/\nmyfinder-device-battery";rows.Add(source);
+                var source=Info("源码",null);source.Detail="https://github.com/\nzhangleoxue-blip/\nmyfinder-device-battery";rows.Add(source);
                 rows.Add(Row(250,"复制诊断摘要",null,"info"));
                 var feedbackRow=Row(258,"反馈问题",null,"info");feedbackRow.Detail=String.IsNullOrEmpty(FeedbackRelay.Url)?"提交需要 GitHub 账号":"在程序内提交，不需要 GitHub 账号";rows.Add(feedbackRow);
                 rows.Add(Row(262,owner.FeedbackReplies.Store.MenuText,null,"info"));

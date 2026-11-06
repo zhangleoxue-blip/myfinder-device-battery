@@ -27,7 +27,7 @@
 3. 需要完整 ZIP 时执行 `-Package`：会调用 `Build-Backend.ps1`，需联网下载官方便携 Python 与 hidapi 并校验签名，是这阶段最容易因网络失败的一步。
 4. 对照 `docs/fork/ARCHITECTURE.md` 第 5 节理解打包链，不要手工改 `build-info.json`。
 
-**注意**：不要用自有私钥给这个包签名。签名权属于上游，改用自有密钥会同时让程序内置的一键更新失效。
+**注意（2026-11-06 更新）**：本机因缺少 PowerShell 7，`tests/UpdateInstallerTests.ps1` 必然失败，所以 `tools/fork_build.ps1` 只能给出「部分成功」，**不能**用它产出的目录 `-Package`。完整构建与打包统一交给 `.github/workflows/fork-release.yml` 的 `windows-latest` runner（自带 pwsh）。本机已验证补丁后的全部 C# 逻辑回归通过（含 376 项更新器检查、463 项反馈检查、2027 项菜单检查）。
 
 ## 阶段 3 — 定制层（可选）
 
@@ -52,16 +52,28 @@
 3. 把你验证过的型号单独建一张证据表，只对你实测过的组合作兼容承诺。
 4. 读数异常时用程序内「反馈问题」提交（注意会公开到上游 issue，见 `COMPLIANCE.md`）。
 
-## 阶段 5 — 接管发布通道（默认不做）
+## 阶段 5 — 接管发布通道（2026-11-06 已启用）
 
-仅当你需要发行与上游不同的功能版本时才考虑：
+用户确认目标是「基于开源内容做自己的软件、换上 LeoZhang 署名、未来发布给大众」，因此本阶段由「默认不做」改为**已实施**：
 
-- 用 `tools/fork_keys.ps1` 生成 RSA 密钥对。
-- 启用 `overlay/patches/trust-key.json` 替换 `PublicKeyXml`。
-- 同时替换 `UpdateTrust.ApiUrl`、`Repository`、必要时 `ZipName`（需要新增补丁描述符）。
-- 自建 Release 服务与签名流程，保证每次同步后补丁能重新贴上。
+- [x] `tools/fork_keys.ps1` 生成 RSA 密钥对：公钥 `overlay/keys/public.xml` **入库**（CI 重放需要），私钥 `logs/fork/keys/private.xml` 被忽略。
+- [x] 启用 `overlay/patches/trust-key.json` 替换 `PublicKeyXml`；`03-release-channel.json` 替换 `Repository` / `ApiUrl`。
+- [x] `AppId` / `ZipName` 保持不变（不需要新补丁，也避免破坏更新文件名匹配）。
+- [x] `CREDITS.md`、`FORK-README.md` 打进发行 ZIP；程序内源码/文档链接指向本仓库。
+- [x] 修正三个硬编码上游 URL 的回归测试，保证 CI 全绿。
+- [ ] 见阶段 6：导入签名 Secret 并发布首个自有签名 Release。
 
-**代价**：程序不再接受上游签名包，二进制层的自动同步消失；上游每次改动 `UpdateValidation.cs` 都可能让补丁锚点失效；你需要独立承担全部发布与安全责任。除非有明确商业理由，建议保持现状。
+**代价**：程序不再接受上游签名包，二进制层的自动同步消失；上游每次改动 `UpdateValidation.cs` 都可能让补丁锚点失效；你需要独立承担全部发布与安全责任。这是用户明确选择「自己开发一款、换署名、公开发布」后的必然后果。
+
+## 阶段 6 — 签名出包并公开发布（流水线已建，待用户执行）
+
+- [x] `.github/workflows/fork-release.yml`：`workflow_dispatch`，全量回归 → `Package.ps1` → `PackageSmoke.ps1` → 校验 AGPL 声明入包 → `Sign-Release.ps1` → 可选发布 Release + `source.zip`。
+- [x] `fork_sync.py` 现在把补丁重放失败判为同步失败，阻止 CI 推送未打补丁的源码。
+- [ ] 首次运行 `publish=false`，下载 artifact 在本机安装验证。
+- [ ] 在仓库 Secrets 添加 `RELEASE_SIGNING_KEY`（值 = `logs/fork/keys/private.xml` 全文）。
+- [ ] 再次运行 `publish=true`，生成 `v<release.json version>` 标签与三件套附件。
+- [ ] 从 Release 下载 ZIP，用包内 `一键安装自启.bat` 安装到本机，运行 `AtkBatteryProbe.exe --self-test` 与真机读数验证。
+- [ ] 决定是否接管阶段 5 之外仍指向上游的「反馈中继」端点（见 `COMPLIANCE.md`）。
 
 ## 当前不建议做的事
 

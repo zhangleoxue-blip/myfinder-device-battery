@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "signature-diagnostics",
+  "enabled": true,
+  "target": "scripts/TrayApp.cs",
+  "strategy": "regex-replace",
+  "pattern": "text\\+=\"[^\"]*\"\\+DevicePackDiagnostic;",
+  "template": "{MATCH}\r\n            text+=\"\\r\\n修改者：LeoZhang (2026) | 上游：wushuai0802/myfinder-device-battery (AGPL-3.0-only)\";",
+  "rationale": "Makes the downstream author visible in the in-app diagnostic/About text, which is also the text users copy into feedback reports.",
+  "compliance": "Keeps the upstream repository identifier visible next to the new credit; does not remove any upstream notice."
+}

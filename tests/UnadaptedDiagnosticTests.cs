@@ -45,7 +45,7 @@ static class UnadaptedDiagnosticTests {
             var rows=PopupPages.Build(owner,new PopupNavigation {Page=PopupPage.Diagnostics,VisibleChoices=100},false);
             Check(rows.Exists(delegate(PopupControl row){return row.Information&&(row.Text+row.Value).Contains("AGPL-3.0-only");}),"diagnostics page names the license");
             Check(rows.Exists(delegate(PopupControl row){return row.Information&&(row.Text+row.Value+row.Detail).Contains("无担保");}),"diagnostics page displays no warranty");
-            Check(rows.Exists(delegate(PopupControl row){return row.Information&&(row.Text+row.Value+row.Detail).Replace("\n","").Contains("https://github.com/wushuai0802/myfinder-device-battery");}),"diagnostics page exposes the complete source address without a network action");
+            Check(rows.Exists(delegate(PopupControl row){return row.Information&&(row.Text+row.Value+row.Detail).Replace("\n","").Contains("https://github.com/zhangleoxue-blip/myfinder-device-battery");}),"diagnostics page exposes the complete source address without a network action");
             var navigation=new PopupNavigation {Page=PopupPage.Diagnostics,Offset=7};
             rows=PopupPages.Build(owner,navigation,false);
             var source=rows.Find(delegate(PopupControl row){return row.Text=="源码";});

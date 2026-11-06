@@ -1,0 +1,69 @@
+{
+  "schema": 1,
+  "capturedDate": "2026-11-06",
+  "source": "Get-PnpDevice -PresentOnly, InstanceId matched VID_xxxx&PID_xxxx",
+  "note": "本清单只是 Windows 设备枚举结果，不代表已取得电量读数。证据等级取自 engine/compatibility.json，只有在本机程序里实际读到电量后才能升级为实机证据。",
+  "devices": [
+    {
+      "vidPid": "320F:5088",
+      "interfaceCount": 10,
+      "systemNames": [
+        "HID Keyboard Device",
+        "HID-compliant mouse",
+        "USB Composite Device",
+        "符合 HID 标准的供应商定义设备"
+      ],
+      "matchedReaders": [
+        "vgn_keyboard - VGN 2.4G 键盘接收器 320F:5088 (A 级)",
+        "g3m - HECATE G3M PRO (C 级)"
+      ],
+      "highestLevel": "A",
+      "nextStep": "安装后确认能否读到键盘/鼠标电量，记录读数、连接方式、休眠唤醒表现"
+    },
+    {
+      "vidPid": "3554:F58A",
+      "interfaceCount": 12,
+      "systemNames": [
+        "HID Keyboard Device",
+        "HID-compliant mouse",
+        "USB Composite Device",
+        "符合 HID 标准的供应商定义设备"
+      ],
+      "matchedReaders": [
+        "pulsar - Pulsar / ATK / VXE / VGN / Scyrox / Hitscan 协议族 (C 级)",
+        "mchose_by_keyboard - MCHOSE / AULA 共享接收器 (C 级)",
+        "vgn_beiying - VGN beiying 2.4G 键盘接收器 (C 级)"
+      ],
+      "highestLevel": "C",
+      "nextStep": "优先做适配候选：先用程序诊断页看是否识别，再决定是否新增独立 provider"
+    },
+    {
+      "vidPid": "048D:5702",
+      "interfaceCount": 3,
+      "systemNames": [
+        "USB 输入设备",
+        "符合 HID 标准的供应商定义设备"
+      ],
+      "matchedReaders": [],
+      "highestLevel": "D",
+      "nextStep": "未被兼容清单收录；048D 为 ITE 主控，多为有线键盘，通常不提供电量字段，暂不列为兼容目标"
+    },
+    {
+      "vidPid": "05E3:0608 / 0610 / 0626",
+      "interfaceCount": 3,
+      "systemNames": ["通用 USB 集线器"],
+      "matchedReaders": [],
+      "highestLevel": "N/A",
+      "nextStep": "USB Hub，非电量设备，排除"
+    },
+    {
+      "vidPid": "0BDA:B711 / A69C:5723",
+      "interfaceCount": 2,
+      "systemNames": ["Realtek 8188GU 无线网卡", "USB 大容量存储设备"],
+      "matchedReaders": [],
+      "highestLevel": "N/A",
+      "nextStep": "非 HID 电量设备，排除"
+    }
+  ],
+  "policy": "本文件为 fork 新增数据，不参与上游编译，不进 build-info.json 哈希清单；上游同步时随分支保留。"
+}

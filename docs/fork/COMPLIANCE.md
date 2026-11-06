@@ -26,16 +26,58 @@
 - **闭源**：不能以「二次开发」名义只发布可执行文件。
 - **移除署名**：不能删掉源码地址、许可证页、上游作者信息。
 - **接管签名后仍声称是官方构建**：替换 `PublicKeyXml` / `ApiUrl` 后，程序不再是上游签名信任链的一部分，必须向用户清晰说明发布主体已变更。
-- **私钥入库**：`tools/fork_keys.ps1` 把私钥写到 `logs/fork/keys/private.xml`（上游 `.gitignore` 已忽略 `logs/`）。私钥不得进入仓库、CI、Release 附件或构建日志。
+- **私钥入库**：`tools/fork_keys.ps1` 把私钥写到 `logs/fork/keys/private.xml`（上游 `.gitignore` 已忽略 `logs/`），公钥写到**纳入版本控制**的 `overlay/keys/public.xml`（公钥不是秘密，CI 重放补丁必须能读到）。私钥不得进入仓库、CI 日志或 Release 附件，只能通过 `RELEASE_SIGNING_KEY` Secret 注入。
+- **只发二进制不附源码**：`fork-release.yml` 会把 `git archive HEAD` 的 `source.zip` 一起挂到 Release，并在 ZIP 内附 `CREDITS.md` / `FORK-README.md` / `LICENSE` / `THIRD_PARTY_NOTICES.md`；发布前由 workflow 强制校验这四个文件确实在包里。
 
 ## 数据与隐私边界
 
 上游说明：程序内「反馈问题」会把诊断公开成 GitHub issue，诊断**不含序列号和文件路径**，且不需要 GitHub 账号。若你对外分发 fork 构建，注意：
 
-1. 反馈仍会提交到**上游仓库**的 issue 列表，你无法控制其内容与展示位置。
-2. 一键更新仍从**上游 Release** 下载，供应链信任对象是上游维护者的私钥。若这不符合你的风险偏好，只能走「接管发布通道」路线（见 `ROADMAP.md` 阶段 5），代价是失去自动同步。
+1. 反馈仍会提交到**上游仓库**的 issue 列表，你无法控制其内容与展示位置。见下方「尚未接管的两个上游网络端点」。
+2. 一键更新已经指向**本仓库 Release** 并用 LeoZhang 的公钥验签，供应链信任对象是你的私钥；上游签名包不再被接受。
 3. 上游兼容清单里 C 级条目为「协议已接入、待实机验证」，不要据此向用户作兼容性保证。
 
 ## 一句话结论
 
 这个 fork 可以自由使用、修改和再分发，但必须**同样开源、同样 AGPL-3.0-only、保留全部声明与源码地址**。如果你的目标是闭源商业产品，正确做法是放弃 fork 路线，改为不复制上游代码的独立实现。
+
+## 独立发布版补充（LeoZhang，2026-11-06）
+
+本仓库现在的定位是**对外发布的修改派生版**，署名 `LeoZhang`。新增 [`CREDITS.md`](../../CREDITS.md)
+作为统一署名与修改声明，满足 AGPL §5(a) 的显著标注要求。
+
+| 变动 | 合规判断 |
+| --- | --- |
+| 新增 `Copyright (C) 2026 LeoZhang` | 允许；属于添加署名 |
+| 保留 `LICENSE`、`THIRD_PARTY_NOTICES.md`、上游源码地址（在 CREDITS 与程序内诊断页） | 必须，已做到 |
+| 改 `AssemblyCompany` / `AssemblyCopyright` / 诊断页文字 | 允许；改动文件带修改声明与日期 |
+| 把 `Repository` / `ApiUrl` 指向本仓库 | 允许；CREDITS 仍列出上游地址 |
+| 替换 `PublicKeyXml` 为自有公钥 | 允许；但必须向用户说明**发布主体已变更**，不得自称官方构建 |
+| 把程序内源码/文档/下载链接指向本仓库 | 允许；上游地址仍在 CREDITS、LICENSE、THIRD_PARTY_NOTICES 中保留 |
+| `Package.ps1` 把 CREDITS / FORK-README 打进 ZIP | 满足 §5(a) 显著修改声明与 §6 随附许可声明 |
+| Release 附 `source.zip`（`git archive HEAD`） | 满足 §6 完整对应源码与 §13 网络交互用户取源码 |
+| `AppId` / `ZipName` 保持不变 | 减少冲突面，非许可要求 |
+
+### 尚未接管的两个上游网络端点（发布前的已知决策项）
+
+按用户「署名 LeoZhang，其他的就沿用现在的」的要求，以下两项**保持上游原样**，请在面向大众正式推广前决定是否处理：
+
+| 端点 | 代码位置 | 影响 | 若决定接管 |
+| --- | --- | --- | --- |
+| 反馈中继 `myfinder-feedback-relay.wushuai0802.deno.net` | `scripts/FeedbackForm.cs` 的 `FeedbackRelay.Url`、`FeedbackClient.IssueUrl`；`scripts/GenericBattery.cs` 的 `IssueBase` | 用户点「反馈问题」会在**上游仓库**创建公开 issue；可能给上游维护者造成噪音 | `overlay/patches/04` / `05` / `06` 已写好但默认 `enabled: false`。启用前必须同步改写 `tests/FeedbackFormTests.cs` 的 `RelayConfiguration`、`tests/FeedbackRepliesTests.cs` 和 `tests/CardsFeedbackTests.cs`，否则 CI 回归会失败 |
+| 型号数据包 `DevicePackTrust.Mirror` / `GitHub` | `scripts/DevicePackTrust.cs` | 应用仍从上游镜像/Release 拉取**由上游公钥验证**的设备兼容数据包 | 建议保持：这是用户最初要的「数据层同步」，且签名验证独立于应用更新信任链，不产生供应链风险 |
+
+这是产品决策，不是 AGPL 合规缺陷：许可、署名、源码地址、对应源码均已齐备。
+
+### 发布状态检查表
+
+1. `.github/workflows/fork-release.yml` 已建立：`workflow_dispatch` 构建 → 全量回归 → 打包 → `PackageSmoke` → 校验 AGPL 声明入包 → 签名 → 可选发布。
+2. 首次运行请把 `publish` 留空，下载 artifact 在本机验证；此时产物**未签名**，不能作为正式 Release。
+3. 正式发布前在仓库 Settings → Secrets and variables → Actions 添加 `RELEASE_SIGNING_KEY`，值为 `logs/fork/keys/private.xml` 全文：
+   `gh secret set RELEASE_SIGNING_KEY < logs/fork/keys/private.xml`（用完删除本地命令历史中的引用）。
+4. 发布时 workflow 会强制要求 tag 等于 `v` + `release.json` 的 version，否则一键更新会拒绝该 Release。
+5. Release 必须同时含 `myfinder-device-battery-v<version>-windows-x64.zip`、`SHA256SUMS.txt`、`SHA256SUMS.txt.sig` 三个附件；`UpdateCatalog.ValidateAssets` 会逐个校验名称与 URL。
+6. 私钥绝不进入仓库、CI 日志、artifact 或 Release；workflow 用完后立即删除临时私钥文件。
+7. 每次上游改动被补丁命中的文件，rebase 会失败并自动 abort；`fork_overlay.py` 锚点消失会报错，且 `fork_sync.py` 现在会把补丁失败判为同步失败、阻止 CI 推送。
+
+**一句话**：可以以 AGPL-3.0-only 对外发布，但必须继续开源、公开完整对应源码、保留全部原署名，并明确标注「非官方构建，由 LeoZhang 发布」。
