@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "id": "package-credits",
+  "enabled": true,
+  "target": "scripts/Package.ps1",
+  "strategy": "regex-replace",
+  "pattern": "foreach\\(\\$file in @\\('README\\.md','CHANGELOG\\.md','THIRD_PARTY_NOTICES\\.md','LICENSE','release\\.json'\\)\\)\\{Copy-Item -LiteralPath \\(Join-Path \\$root \\$file\\) -Destination \\$stage\\}",
+  "template": "{MATCH}\r\nforeach($file in @('CREDITS.md','FORK-README.md')){Copy-Item -LiteralPath (Join-Path $root $file) -Destination $stage}",
+  "rationale": "Package.ps1 copies a fixed list of root documents into the shipped ZIP. CREDITS.md carries the downstream author, the original author, the licence and the 'not an official build' notice; FORK-README.md explains the fork and the Corresponding Source. Both must travel inside every distributed binary package, not just live on GitHub.",
+  "compliance": "AGPL-3.0-only section 5(a) (prominent modification notices) and section 6 (conveying with the licence and notices). Added files are hashed into package-manifest.json automatically because the copy happens before New-DeviceBatteryPackageManifest.",
+  "note": "{MATCH} append style: the anchor stays in the file, so the patch stays idempotent and survives upstream edits to the surrounding line."
+}

@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "signature-assembly",
+  "enabled": true,
+  "target": "scripts/Build.ps1",
+  "strategy": "regex-replace",
+  "pattern": "\\[assembly: AssemblyProduct\\(\"MyFinder Device Battery\"\\)\\]",
+  "template": "[assembly: AssemblyProduct(\"MyFinder Device Battery\")]\r\n[assembly: AssemblyCompany(\"LeoZhang\")]\r\n[assembly: AssemblyCopyright(\"Copyright (C) 2026 LeoZhang; modified from wushuai0802/myfinder-device-battery, AGPL-3.0-only\")]",
+  "rationale": "Build.ps1 generates the real assembly metadata here-string; AssemblyInfo.cs is reference-only. Adds the downstream author while keeping the upstream product name intact.",
+  "compliance": "AGPL-3.0-only section 5(a): modified files carry a prominent change notice; upstream copyright is preserved in CREDITS.md and LICENSE."
+}

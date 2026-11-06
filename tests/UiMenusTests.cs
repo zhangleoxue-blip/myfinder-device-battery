@@ -13,7 +13,7 @@ using AtkBatteryTray;
 // All files live next to the test executable, which must be built under TEMP.
 static class UiMenusTests {
     const BindingFlags Private=BindingFlags.Instance|BindingFlags.NonPublic;
-    const string SupportUrl="https://github.com/wushuai0802/myfinder-device-battery/blob/main/docs/compatibility.md";
+    const string SupportUrl="https://github.com/zhangleoxue-blip/myfinder-device-battery/blob/fork/main/docs/compatibility.md";
     static int checks,failures;
     static object Field(object target,string name){return target.GetType().GetField(name,Private).GetValue(target);}
     static void Set(object target,string name,object value){target.GetType().GetField(name,Private).SetValue(target,value);}

@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "tests-diagnostics-source-link",
+  "enabled": true,
+  "target": "tests/UnadaptedDiagnosticTests.cs",
+  "strategy": "regex-replace",
+  "pattern": "\"https://github\\.com/[A-Za-z0-9_.-]+/myfinder-device-battery\"",
+  "template": "\"https://github.com/zhangleoxue-blip/myfinder-device-battery\"",
+  "rationale": "The diagnostics page now shows the LeoZhang repository (07-app-source-link.json). This regression asserts the complete source address is reachable, so its expected literal must track the product.",
+  "compliance": "Test-only change. The upstream address is still preserved in CREDITS.md and THIRD_PARTY_NOTICES.md."
+}

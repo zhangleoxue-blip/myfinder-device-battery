@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "id": "release-channel",
+  "enabled": true,
+  "target": "scripts/UpdateValidation.cs",
+  "strategy": "regex-replace",
+  "pattern": "internal const string Repository=\"[^\"]+\";\\r?\\n\\s*internal const string ApiUrl=\"[^\"]+\";",
+  "template": "internal const string Repository=\"https://github.com/zhangleoxue-blip/myfinder-device-battery\";\r\n        internal const string ApiUrl=\"https://api.github.com/repos/zhangleoxue-blip/myfinder-device-battery/releases\";",
+  "rationale": "For a public release under LeoZhang, the in-app source link and one-click updater must point at the publisher's own repository. Otherwise users of this build would be updated to upstream packages.",
+  "compliance": "CREDITS.md retains the original upstream URL, author and license; AppId and ZipName are intentionally unchanged.",
+  "requires": "A signed Release in this repository (SHA256SUMS.txt + .sig) using the matching private key. Until then, the updater simply reports no new version."
+}

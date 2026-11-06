@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "compatibility-doc-link",
+  "enabled": true,
+  "target": "scripts/TrayApp.cs",
+  "strategy": "regex-replace",
+  "pattern": "openLink\\(\"https://github\\.com/[A-Za-z0-9_.-]+/myfinder-device-battery/blob/[^\"]+/docs/compatibility\\.md\"\\)",
+  "template": "openLink(\"https://github.com/zhangleoxue-blip/myfinder-device-battery/blob/fork/main/docs/compatibility.md\")",
+  "rationale": "The in-app 'compatibility list' link must resolve on the publisher's repository. fork/main is this repository's default branch; its inherited main branch is stale and must not be linked.",
+  "compliance": "Only a documentation URL; the upstream compatibility data itself is unchanged."
+}

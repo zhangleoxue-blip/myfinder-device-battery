@@ -23,6 +23,8 @@ $metadata=@'
 using System.Reflection;
 [assembly: AssemblyTitle("MyFinder Device Battery")]
 [assembly: AssemblyProduct("MyFinder Device Battery")]
+[assembly: AssemblyCompany("LeoZhang")]
+[assembly: AssemblyCopyright("Copyright (C) 2026 LeoZhang; modified from wushuai0802/myfinder-device-battery, AGPL-3.0-only")]
 [assembly: AssemblyDescription("Local mouse, headset and keyboard battery cards for Windows")]
 [assembly: AssemblyVersion("{ASSEMBLY}")]
 [assembly: AssemblyFileVersion("{ASSEMBLY}")]

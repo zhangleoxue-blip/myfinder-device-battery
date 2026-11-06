@@ -1,0 +1,12 @@
+{
+  "schema": 1,
+  "id": "feedback-issue-base",
+  "enabled": false,
+  "blockedBy": "Disabled together with 04-feedback-relay: tests/CardsFeedbackTests.cs asserts the exact upstream issue-template URL. Keeping the browser fallback unchanged avoids changing feedback behaviour.",
+  "target": "scripts/GenericBattery.cs",
+  "strategy": "regex-replace",
+  "pattern": "const string IssueBase=\"https://github\\.com/[A-Za-z0-9_.-]+/myfinder-device-battery/issues/new\\?template=device-request\\.yml\";",
+  "template": "const string IssueBase=\"https://github.com/zhangleoxue-blip/myfinder-device-battery/issues/new?template=device-request.yml\";",
+  "rationale": "With the relay disabled, browser fallback builds a prefilled issue URL from IssueBase. Point it at the publisher's repository, which carries the same .github/ISSUE_TEMPLATE/device-request.yml inherited from the fork.",
+  "compliance": "Only changes where a user's own report is submitted; CREDITS.md retains the original project URL."
+}

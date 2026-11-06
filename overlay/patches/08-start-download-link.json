@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "start-download-link",
+  "enabled": true,
+  "target": "scripts/Start.ps1",
+  "strategy": "regex-replace",
+  "pattern": "https://github\\.com/[A-Za-z0-9_.-]+/myfinder-device-battery/releases",
+  "template": "https://github.com/zhangleoxue-blip/myfinder-device-battery/releases",
+  "rationale": "Start.ps1 prints this URL when the source checkout has no compiled EXE. Users of the LeoZhang build must be sent to the publisher's own Releases page, not upstream's.",
+  "compliance": "Text-only change; Start.ps1 is BOM-encoded and the replayer preserves the BOM."
+}

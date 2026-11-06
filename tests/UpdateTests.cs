@@ -127,7 +127,7 @@ static class UpdateTests {
             Check(http.Requests.Count==0&&body.Reads==0,"pre-cancelled transfer sends no HTTP");
         }
     }
-    static UpdateAsset Asset(string version,string name){return new UpdateAsset {Name=name,Size=100,Url="https://github.com/wushuai0802/myfinder-device-battery/releases/download/v"+version+"/"+name};}
+    static UpdateAsset Asset(string version,string name){return new UpdateAsset {Name=name,Size=100,Url=UpdateTrust.Repository+"/releases/download/v"+version+"/"+name};}
     static UpdateRelease Release(string version,bool pre=false){return new UpdateRelease {Tag="v"+version,Prerelease=pre,Body="<script>bad()</script>\r\n[click](file:///C:/x)",Assets=new[]{Asset(version,UpdateTrust.ZipName(version)),Asset(version,"SHA256SUMS.txt"),Asset(version,"SHA256SUMS.txt.sig")}};}
     static void PlainReleaseNotes(){
         foreach(string text in new[]{"<script>bad()</script>\r\n[click](file:///C:/x)",@"{\rtf1\ansi\b This must remain literal RTF text\b0}","https://example.invalid/\r\nfile:///C:/x\r\n[click](javascript:bad())"}){
