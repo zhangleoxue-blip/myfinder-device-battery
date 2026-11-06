@@ -1,18 +1,40 @@
 {
-  "schema": 1,
-  "displayName": "MyFinder Device Battery (Fork Build)",
-  "publisher": "local-fork",
+  "schema": 2,
+  "displayName": "MyFinder Device Battery",
   "productName": "MyFinder Device Battery",
   "appId": "myfinder-device-battery",
-  "policy": "additive-only",
-  "policyNote": "Do not rename AppId, package ZIP name, or the upstream release API URL. The built-in one-click updater points at the upstream Releases endpoint; keeping those values intact is what lets an installed fork build follow upstream releases automatically.",
-  "appliedTo": [],
+  "publisher": "LeoZhang",
+  "author": "LeoZhang",
+  "copyright": "Copyright (C) 2026 LeoZhang",
+  "license": "AGPL-3.0-only",
+  "derivesFrom": "https://github.com/wushuai0802/myfinder-device-battery",
+  "originalCopyright": "Copyright (C) 2026 wushuai0802",
+  "modifiedDate": "2026-11-06",
+  "releaseChannel": "https://api.github.com/repos/zhangleoxue-blip/myfinder-device-battery/releases",
+  "policy": "additive-only + declarative patches",
+  "policyNote": "Product name, icon, AppId and package ZIP name are kept from upstream. Upstream files are only edited through overlay/patches/ so the changes survive every upstream rebase. LICENSE, THIRD_PARTY_NOTICES.md and upstream copyright notices are never removed. The release channel and signing key now belong to LeoZhang.",
+  "appliedTo": [
+    "scripts/Build.ps1",
+    "scripts/TrayApp.cs",
+    "scripts/UpdateValidation.cs",
+    "scripts/PopupPages.cs",
+    "scripts/Start.ps1",
+    "scripts/Package.ps1",
+    "tests/UpdateTests.cs",
+    "tests/UnadaptedDiagnosticTests.cs",
+    "tests/UiMenusTests.cs"
+  ],
+  "enabledPatches": 11,
+  "disabledPatches": 3,
+  "publicSigningKey": "overlay/keys/public.xml",
   "customFiles": [
+    "CREDITS.md",
     "FORK-README.md",
     "fork-config.json",
     "tools/",
     "overlay/",
     "docs/fork/",
-    ".github/workflows/fork-sync.yml"
+    ".github/workflows/fork-sync.yml",
+    ".github/workflows/fork-release.yml"
   ]
 }

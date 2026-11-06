@@ -307,7 +307,7 @@ namespace AtkBatteryTray {
                 else if(id==250){copyText(owner.DiagnosticSummary());navigation.Notice="已复制诊断摘要（不含序列号和路径）";Invalidate();return;}
                 else if(id==258){ShowFeedback();return;}
                 else if(id==262){ShowMyFeedback();return;}
-                else if(id==259){openLink("https://github.com/wushuai0802/myfinder-device-battery/blob/main/docs/compatibility.md");return;}
+                else if(id==259){openLink("https://github.com/zhangleoxue-blip/myfinder-device-battery/blob/fork/main/docs/compatibility.md");return;}
                 else return;
                 owner.SavePreferences(pref);owner.ConfigurationChanged(false);UpdateLayoutSize();Invalidate();
             }catch(Exception error){navigation.Notice="未保存："+error.Message;Invalidate();}
@@ -1275,6 +1275,7 @@ namespace AtkBatteryTray {
                 "\r\n后台间隔："+DeviceSettings.Current.BackgroundSeconds+"秒\r\n自启："+PopupPages.StartupState();
             text+="\r\n软件更新："+UpdateStatus;if(!String.IsNullOrEmpty(UpdateFailure))text+="\r\n上次更新失败："+UpdateFailure;
             text+="\r\n"+DevicePackDiagnostic;
+            text+="\r\n修改者：LeoZhang (2026) | 上游：wushuai0802/myfinder-device-battery (AGPL-3.0-only)";
             if(!String.IsNullOrEmpty(ErrorMessage))text+="\r\n鼠标读取："+SafeDiagnostic.Clean(ErrorMessage);
             if(!String.IsNullOrEmpty(DpiError))text+="\r\nDPI读取："+SafeDiagnostic.Clean(DpiError);
             foreach(var device in WirelessDevices)text+="\r\n"+device.Kind+"："+WirelessLayout.View(device).Tooltip+(device.ModelSource=="pack"?" | 来自数据包，待验证":"");

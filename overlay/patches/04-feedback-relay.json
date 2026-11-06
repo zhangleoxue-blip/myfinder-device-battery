@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "id": "feedback-relay-disabled",
+  "enabled": false,
+  "blockedBy": "Upstream tests/FeedbackFormTests.cs::RelayConfiguration and tests/FeedbackRepliesTests.cs assert the shipped relay is live. Enabling this requires rewriting those tests first. Left off by user decision: '其他的就沿用现在的'.",
+  "target": "scripts/FeedbackForm.cs",
+  "strategy": "regex-replace",
+  "pattern": "internal const string Url=\"[^\"]*\";",
+  "template": "internal const string Url=\"\"; // LeoZhang fork: upstream Deno relay disabled; feedback opens this fork's issue form in a browser.",
+  "rationale": "The upstream relay (myfinder-feedback-relay.wushuai0802.deno.net) creates issues in wushuai0802's repository. A public build published by LeoZhang must not silently send its users' diagnostics to the original author's service. An empty relay is a supported upstream code path: the form switches to browser submission.",
+  "compliance": "Keeps the feedback feature usable, but routes it to the publisher's own issue tracker (see feedback-issue-base). Does not remove any upstream notice.",
+  "note": "The pattern uses [^\"]* so it still matches the empty value on a replay, making this patch idempotent."
+}

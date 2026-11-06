@@ -33,6 +33,7 @@ New-Item -ItemType Directory -Path (Join-Path $stage 'outputs'),(Join-Path $stag
 foreach($file in @('AtkMouseBattery.exe','AtkBatteryProbe.exe')){Copy-Item -LiteralPath (Join-Path $BuildDirectory $file) -Destination (Join-Path $stage 'outputs')}
 foreach($file in @('Install.Common.ps1','Manifest.Common.ps1','Install-Startup.ps1','Uninstall-Startup.ps1','Start.ps1','Apply-Update.ps1','Update.Common.ps1')){Copy-Item -LiteralPath (Join-Path $PSScriptRoot $file) -Destination (Join-Path $stage 'scripts')}
 foreach($file in @('README.md','CHANGELOG.md','THIRD_PARTY_NOTICES.md','LICENSE','release.json')){Copy-Item -LiteralPath (Join-Path $root $file) -Destination $stage}
+foreach($file in @('CREDITS.md','FORK-README.md')){Copy-Item -LiteralPath (Join-Path $root $file) -Destination $stage}
 Copy-Item -LiteralPath $buildInfoPath -Destination (Join-Path $stage 'build-info.json')
 foreach($file in (Get-DeviceBatteryEngineFiles (Join-Path $root 'engine'))) {
     $relative=$file.FullName.Substring($root.Length+1).Replace('\','/')

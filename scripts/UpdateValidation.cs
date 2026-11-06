@@ -15,10 +15,10 @@ namespace AtkBattery {
     // Shared by the application, offline validation harness and local signing tool.
     // The production download path always supplies this constant, never settings or environment data.
     internal static class UpdateTrust {
-        internal const string PublicKeyXml = @"<RSAKeyValue><Modulus>5Rp+cdwPDCkEarIn8skfCaDyZ/wpPWKgeWyLNTDWrd3kkpOW9rcsLWrvyYObwQ8NNfnsGlqMYsc6BzOb6ZnUxTkDbwZAn+6QB9MEh8PrkG9PL4ZbcSco4dmr2hi9D5EurnIHpDCQd+75u4yMiMd93VprToE7w/sSOXXmHk602ny5TXtLdNTIWSRMT9RAZ5hxwFnRekflG1fmrxXyuO72gzRy7XVvNrHRa/TwrDVGMxg1djpYs7OFtZXTX6dszekah5OSg9d4or1fUK8ll71xBFTswiD4JQ/3tQ3y66MIjoKJM9KQp41Q4+WiXgKCnWe1vpZiM/IJlMB2agdjSmYfQoxBiWuL2dc0PAJrAeyuLBq348NnBw3ik7J7h9MbFMHsHG5oFyAZR10X+GPzsSAvLSiPvaNn3bnYE9NhKm6FMGJjRS1ecsQ+YUhRBatMjSwRDtbkGFmnadynp0GV5r2lyjZXeaF7PeLAXotPwUrXMriIj+1W4BhPVoe4X9M+BKqZ</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
+        internal const string PublicKeyXml = @"<RSAKeyValue><Modulus>sT6IqK1Ds2rzsenpAToti9ZYxEyV43iftZE/J0zjyU2U+saZr50RZ1ADV7t9OaGXkwHnOs8CZuDxjWLRQ9jKNStzRY6X36TA29zeIFpcsHnbg9ItBLG0NX0a1D81EjeYqAcWlpq9V+ceyJZfju1N1Ww5RkpAWfDCZMvwy8DUVv1qwzPPijK+isMn8SmcYuX0a3LfNWbnGLs7cLk/N7I/rh+Caut8FZEIJv6SbQEpPShsfUXki9TWAQBtzqvIfxsVhX1SRVIAETnnItMOi5oV1A1Ntpk6eMTlv3pTUlWydLEA2gqJ5UB5hXFWpGfiCN2WJYnwfeqq3KQtvRa+w/pVNQ==</Modulus><Exponent>AQAB</Exponent></RSAKeyValue>";
         internal const string AppId="myfinder-device-battery";
-        internal const string Repository="https://github.com/wushuai0802/myfinder-device-battery";
-        internal const string ApiUrl="https://api.github.com/repos/wushuai0802/myfinder-device-battery/releases";
+        internal const string Repository="https://github.com/zhangleoxue-blip/myfinder-device-battery";
+        internal const string ApiUrl="https://api.github.com/repos/zhangleoxue-blip/myfinder-device-battery/releases";
         internal const long MaxDownloadBytes=100L*1024*1024;
         internal const long MaxExpandedBytes=512L*1024*1024;
         internal static string ZipName(string version){return "myfinder-device-battery-v"+UpdateVersion.Parse(version)+"-windows-x64.zip";}

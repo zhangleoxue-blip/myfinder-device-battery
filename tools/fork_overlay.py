@@ -54,20 +54,31 @@ def apply_patch(spec):
         raise RuntimeError("anchor matched {} times (expected exactly 1); "
                            "upstream changed the file, review manually".format(len(matches)))
 
-    values = {}
-    key_file = ROOT / spec["keyFile"]
-    if not key_file.is_file():
-        raise RuntimeError("key file missing: {} (run tools/fork_keys.ps1 first)".format(spec["keyFile"]))
-    key_xml = key_file.read_text(encoding="utf-8").strip()
-    if not re.fullmatch(r"<RSAKeyValue>.*</RSAKeyValue>", key_xml, re.DOTALL):
-        raise RuntimeError("public key file is not a valid RSAKeyValue XML blob")
-    values["PUBLIC_KEY_XML"] = key_xml
+    values = dict(spec.get("values", {}))
+    key_file_spec = spec.get("keyFile")
+    if key_file_spec:
+        key_file = ROOT / key_file_spec
+        if not key_file.is_file():
+            raise RuntimeError("key file missing: {} (run tools/fork_keys.ps1 first)".format(key_file_spec))
+        key_xml = key_file.read_text(encoding="utf-8").strip()
+        if not re.fullmatch(r"<RSAKeyValue>.*</RSAKeyValue>", key_xml, re.DOTALL):
+            raise RuntimeError("public key file is not a valid RSAKeyValue XML blob")
+        values["PUBLIC_KEY_XML"] = key_xml
 
+    match = matches[0]
+    # {MATCH} lets a descriptor append to an anchor without restating it.
+    values["MATCH"] = match.group(0)
     replacement = spec["template"]
     for name, value in values.items():
         replacement = replacement.replace("{" + name + "}", value)
 
-    match = matches[0]
+    # Append-style templates keep their anchor in the replacement, so the regex
+    # would match again on the next run and insert the same lines twice. Treat
+    # "the added text is already present" as an already-applied patch.
+    appended = replacement.replace(match.group(0), "", 1).strip()
+    if appended and appended in text:
+        return "already-applied"
+
     updated = text[:match.start()] + replacement + text[match.end():]
     if updated == text:
         return "already-applied"
@@ -78,7 +89,7 @@ def apply_patch(spec):
 def command_apply(cfg):
     patches_dir = ROOT / cfg["paths"]["patches"]
     report = {"schema": 1, "utc": utcnow(), "total": 0, "applied": 0,
-              "skipped": 0, "failed": 0, "patches": []}
+              "unchanged": 0, "skipped": 0, "failed": 0, "patches": []}
     for descriptor in sorted(patches_dir.glob("*.json")):
         spec = json.loads(descriptor.read_text(encoding="utf-8"))
         report["total"] += 1
@@ -89,8 +100,10 @@ def command_apply(cfg):
         else:
             try:
                 entry["result"] = apply_patch(spec)
-                if entry["result"] != "failed":
+                if entry["result"] == "applied":
                     report["applied"] += 1
+                elif entry["result"] == "already-applied":
+                    report["unchanged"] += 1
             except Exception as exc:
                 entry["result"] = "failed: {}".format(exc)
                 report["failed"] += 1
@@ -98,8 +111,9 @@ def command_apply(cfg):
 
     path = report_path(cfg)
     path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-    print("[overlay] total={} applied={} skipped={} failed={} -> {}".format(
-        report["total"], report["applied"], report["skipped"], report["failed"], path))
+    print("[overlay] total={} applied={} unchanged={} skipped={} failed={} -> {}".format(
+        report["total"], report["applied"], report["unchanged"],
+        report["skipped"], report["failed"], path))
     for entry in report["patches"]:
         print("  - {}: {}".format(entry["id"], entry["result"]))
     return 0 if report["failed"] == 0 else 1

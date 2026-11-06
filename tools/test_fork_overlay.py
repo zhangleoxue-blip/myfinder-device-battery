@@ -6,7 +6,8 @@ Runs entirely inside a temporary directory, so no upstream source file in the
 real repository is ever modified. Verifies three behaviours:
   1. an enabled patch replaces exactly one anchored constant;
   2. applying the same patch twice is idempotent;
-  3. a vanished anchor is reported as a failure instead of being skipped.
+  3. a vanished anchor is reported as a failure instead of being skipped;
+  4. append-style patches (using {MATCH}) also stay idempotent.
 """
 
 import json
@@ -28,7 +29,7 @@ def build_fixture(root):
     config = {"schema": 1, "paths": {
         "patches": "overlay/patches",
         "overlayReport": "logs/fork/overlay-report.json",
-        "keys": "logs/fork/keys",
+        "keys": "overlay/keys",
         "overlay": "overlay",
     }}
     (root / "fork-config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
@@ -41,7 +42,7 @@ def build_fixture(root):
         "strategy": "regex-replace",
         "pattern": 'internal const string PublicKeyXml = @"[^"]+";',
         "template": 'internal const string PublicKeyXml = @"{PUBLIC_KEY_XML}";',
-        "keyFile": "logs/fork/keys/public.xml",
+        "keyFile": "overlay/keys/public.xml",
     }
     (root / "overlay" / "patches").mkdir(parents=True)
     (root / "overlay" / "patches" / "test.json").write_text(
@@ -53,8 +54,8 @@ def build_fixture(root):
         '        internal const string PublicKeyXml = @"' + ORIGINAL_KEY + '";\n'
         "    }\n}\n", encoding="utf-8")
 
-    (root / "logs" / "fork" / "keys").mkdir(parents=True)
-    (root / "logs" / "fork" / "keys" / "public.xml").write_text(
+    (root / "overlay" / "keys").mkdir(parents=True)
+    (root / "overlay" / "keys" / "public.xml").write_text(
         REPLACED_KEY, encoding="utf-8")
 
 
@@ -67,6 +68,48 @@ def run_apply(root):
 
 def read_report(root):
     return json.loads((root / "logs" / "fork" / "overlay-report.json").read_text(encoding="utf-8"))
+
+
+def check_append_idempotency():
+    """Append-style templates keep their anchor; re-applying must be a no-op."""
+    with tempfile.TemporaryDirectory(prefix="fork-overlay-append-") as tmp:
+        root = Path(tmp)
+        (root / "tools").mkdir(parents=True)
+        shutil.copy2(ROOT / "tools" / "fork_overlay.py", root / "tools" / "fork_overlay.py")
+        config = {"schema": 1, "paths": {
+            "patches": "overlay/patches",
+            "overlayReport": "logs/fork/overlay-report.json",
+            "keys": "overlay/keys",
+            "overlay": "overlay",
+        }}
+        (root / "fork-config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
+        (root / "overlay" / "patches").mkdir(parents=True)
+        patch = {
+            "schema": 1, "id": "test-append", "enabled": True,
+            "target": "scripts/Build.ps1", "strategy": "regex-replace",
+            "pattern": r'\[assembly: AssemblyProduct\("Demo"\)\]',
+            "template": '{MATCH}\n[assembly: AssemblyCompany("LeoZhang")]',
+        }
+        (root / "overlay" / "patches" / "append.json").write_text(
+            json.dumps(patch, indent=2), encoding="utf-8")
+        (root / "scripts").mkdir()
+        (root / "scripts" / "Build.ps1").write_text(
+            '[assembly: AssemblyProduct("Demo")]\n[assembly: AssemblyVersion("1")]\n',
+            encoding="utf-8")
+
+        first = run_apply(root)
+        second = run_apply(root)
+        text = (root / "scripts" / "Build.ps1").read_text(encoding="utf-8")
+        results = [item.get("result") for item in read_report(root).get("patches", [])]
+
+        problems = []
+        if first.returncode != 0:
+            problems.append("append patch first apply failed")
+        if text.count('AssemblyCompany("LeoZhang")') != 1:
+            problems.append("append patch inserted its text more than once")
+        if results != ["already-applied"]:
+            problems.append("append patch second apply was not idempotent: {}".format(results))
+        return problems
 
 
 def main():
@@ -95,11 +138,13 @@ def main():
         if third.returncode == 0 or third_report.get("failed") != 1:
             failures.append("missing anchor was not reported as a failure: {}".format(third_report))
 
+        failures.extend(check_append_idempotency())
+
         for failure in failures:
             print("FAIL:", failure)
         if failures:
             return 1
-        print("PASS 3 overlay patch checks: apply, idempotency, missing-anchor detection")
+        print("PASS 4 overlay patch checks: apply, idempotency, missing-anchor detection, append idempotency")
         return 0
 
 

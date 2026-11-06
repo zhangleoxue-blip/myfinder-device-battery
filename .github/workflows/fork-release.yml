@@ -1,0 +1,210 @@
+name: LeoZhang signed release
+
+# Builds the LeoZhang derivative on a clean Windows runner, produces the exact
+# three assets that UpdateCatalog.ValidateAssets requires, signs the checksum
+# file with the private key held ONLY in the RELEASE_SIGNING_KEY secret, and
+# optionally publishes a GitHub Release together with the Corresponding Source.
+#
+# First run: leave "publish" unchecked. Download the artifact to verify the
+# build locally. Then add the secret and run again with "publish" checked.
+#
+# All build paths are workspace-relative so they work identically in bash and
+# PowerShell on a Windows runner (runner.temp uses backslashes there).
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: 'Create a public GitHub Release (requires RELEASE_SIGNING_KEY)'
+        type: boolean
+        required: false
+        default: false
+      tag:
+        description: 'Release tag (blank = v + release.json version)'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    env:
+      BUILD_DIR: outputs/ci-build
+      RELEASE_DIR: outputs/ci-release
+      SMOKE_DIR: outputs/ci-smoke
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fork/main
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Self-check and replay overlay patches
+        shell: bash
+        run: |
+          set -euo pipefail
+          python tools/test_fork_overlay.py
+          python tools/fork_overlay.py verify
+          python tools/fork_overlay.py apply
+          python tools/fork_overlay.py apply
+          git diff --exit-code -- scripts tests || {
+            echo "::error::Overlay patches changed tracked files; commit the replay result before releasing."
+            exit 1
+          }
+
+      - name: Resolve version and tag
+        id: ver
+        shell: pwsh
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          $release = Get-Content -Raw -LiteralPath release.json | ConvertFrom-Json
+          $tag = $env:INPUT_TAG
+          if ([string]::IsNullOrWhiteSpace($tag)) { $tag = "v$($release.version)" }
+          if ($tag -notmatch '^v[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$') {
+            throw "Tag '$tag' is not a version this application can parse."
+          }
+          if ("v$($release.version)" -cne $tag) {
+            throw "Tag '$tag' does not match release.json version $($release.version); the updater would reject it."
+          }
+          "version=$($release.version)" >> $env:GITHUB_OUTPUT
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+          "zip=myfinder-device-battery-v$($release.version)-windows-x64.zip" >> $env:GITHUB_OUTPUT
+          if ($release.version -like '*-*') { "prerelease=true" >> $env:GITHUB_OUTPUT }
+          else { "prerelease=false" >> $env:GITHUB_OUTPUT }
+          Write-Host "Release version $($release.version), tag $tag"
+
+      - name: Build and run the full upstream regression
+        shell: powershell
+        run: ./scripts/Build.ps1 -OutputDirectory "$env:BUILD_DIR"
+
+      - name: Package the validated build
+        shell: powershell
+        run: ./scripts/Package.ps1 -SkipBuild -BuildDirectory "$env:BUILD_DIR" -OutputDirectory "$env:RELEASE_DIR"
+
+      - name: Smoke-test the final ZIP
+        shell: powershell
+        run: |
+          $zips = @(Get-ChildItem -LiteralPath $env:RELEASE_DIR -Filter '*.zip' -File)
+          if ($zips.Count -ne 1) { throw 'Expected exactly one final release ZIP.' }
+          if ($zips[0].Name -cne '${{ steps.ver.outputs.zip }}') { throw "Unexpected ZIP name $($zips[0].Name)" }
+          ./tests/PackageSmoke.ps1 -ZipPath $zips[0].FullName -OutputDirectory $env:SMOKE_DIR
+
+      - name: Verify AGPL notices are inside the distributed ZIP
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [IO.Compression.ZipFile]::OpenRead((Join-Path $env:RELEASE_DIR '${{ steps.ver.outputs.zip }}'))
+          try {
+            $names = @($zip.Entries | ForEach-Object { $_.FullName })
+            foreach ($required in @('CREDITS.md','FORK-README.md','LICENSE','THIRD_PARTY_NOTICES.md')) {
+              if ($names -cnotcontains $required) { throw "AGPL notice missing from ZIP: $required" }
+            }
+            Write-Host 'AGPL notices present: CREDITS.md, FORK-README.md, LICENSE, THIRD_PARTY_NOTICES.md'
+          } finally { $zip.Dispose() }
+
+      - name: Check signing key availability
+        id: keycheck
+        shell: bash
+        env:
+          SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          if [ -n "$SIGNING_KEY" ]; then echo "available=true" >> "$GITHUB_OUTPUT"
+          else echo "available=false" >> "$GITHUB_OUTPUT"; fi
+
+      - name: Sign SHA256SUMS.txt
+        if: steps.keycheck.outputs.available == 'true'
+        shell: powershell
+        env:
+          RELEASE_SIGNING_KEY: ${{ secrets.RELEASE_SIGNING_KEY }}
+        run: |
+          $key = Join-Path $env:RUNNER_TEMP 'release-private.xml'
+          [IO.File]::WriteAllText($key, $env:RELEASE_SIGNING_KEY, (New-Object Text.UTF8Encoding($false)))
+          try {
+            ./scripts/Sign-Release.ps1 -ReleaseDirectory $env:RELEASE_DIR -PrivateKeyPath $key
+            if (-not (Test-Path -LiteralPath (Join-Path $env:RELEASE_DIR 'SHA256SUMS.txt.sig'))) {
+              throw 'Signing reported success but SHA256SUMS.txt.sig is missing.'
+            }
+          } finally {
+            Remove-Item -LiteralPath $key -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Guard publish
+        if: inputs.publish == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ "${{ steps.keycheck.outputs.available }}" != "true" ]; then
+            echo "::error::Publishing requires the RELEASE_SIGNING_KEY repository secret."
+            exit 1
+          fi
+          test -f "$RELEASE_DIR/SHA256SUMS.txt.sig" || { echo "::error::Missing signature."; exit 1; }
+          test -f "$RELEASE_DIR/SHA256SUMS.txt" || { echo "::error::Missing checksums."; exit 1; }
+
+      - name: Attach the Corresponding Source (AGPL sections 6 and 13)
+        if: inputs.publish == true
+        shell: bash
+        run: |
+          set -euo pipefail
+          git archive --format=zip \
+            --prefix="myfinder-device-battery-${{ steps.ver.outputs.tag }}-source/" \
+            -o "$RELEASE_DIR/source.zip" HEAD
+          test -s "$RELEASE_DIR/source.zip"
+
+      - name: Write release notes
+        if: inputs.publish == true
+        shell: bash
+        run: |
+          cat > "$RELEASE_DIR/notes.md" <<'NOTES'
+          ## MyFinder Device Battery - LeoZhang build
+
+          This is an **unofficial modified build published by LeoZhang**. It is a
+          derivative of `wushuai0802/myfinder-device-battery` and is distributed
+          under **AGPL-3.0-only**. It is not an official build of the original
+          project and is not signed with the original author's key.
+
+          - Full attribution, licence and change notices: `CREDITS.md` (also inside the ZIP).
+          - Corresponding Source: `source.zip` attached here, plus this repository at the release tag.
+          - One-click updates verify `SHA256SUMS.txt` against `SHA256SUMS.txt.sig`
+            using the public key embedded in `scripts/UpdateValidation.cs`.
+
+          Product name, icon, AppId and ZIP naming follow upstream; the release
+          channel and signing key belong to this repository only.
+
+          Provided as-is, without warranty. Device compatibility entries marked
+          "not verified on real hardware" are not compatibility guarantees.
+          NOTES
+
+      - name: Publish the GitHub Release
+        if: inputs.publish == true
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cd "$RELEASE_DIR"
+          args=(--title "MyFinder Device Battery ${{ steps.ver.outputs.version }} (LeoZhang build)"
+                --notes-file notes.md
+                --target "$GITHUB_SHA")
+          if [ "${{ steps.ver.outputs.prerelease }}" = "true" ]; then args+=(--prerelease); fi
+          gh release create "${{ steps.ver.outputs.tag }}" "${args[@]}" \
+            "${{ steps.ver.outputs.zip }}" \
+            SHA256SUMS.txt SHA256SUMS.txt.sig source.zip
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: leozhang-windows-x64
+          path: |
+            outputs/ci-release/*.zip
+            outputs/ci-release/SHA256SUMS.txt
+            outputs/ci-release/SHA256SUMS.txt.sig
+          if-no-files-found: warn

@@ -1,14 +1,14 @@
 {
   "schema": 1,
   "id": "trust-public-key",
-  "enabled": false,
+  "enabled": true,
   "target": "scripts/UpdateValidation.cs",
   "strategy": "regex-replace",
   "pattern": "internal const string PublicKeyXml = @\"[^\"]+\";",
   "template": "internal const string PublicKeyXml = @\"{PUBLIC_KEY_XML}\";",
-  "keyFile": "logs/fork/keys/public.xml",
-  "rationale": "Only needed if this fork publishes its OWN signed release packages. Sign-Release.ps1 validates the private key against the built-in public key, so a self-signed package requires replacing this constant.",
-  "risk": "Enabling this patch breaks compatibility with upstream-signed releases and the built-in one-click updater (ApiUrl still points upstream). It also creates a recurring rebase conflict whenever upstream edits UpdateValidation.cs. Keep it disabled unless you also take over the entire release channel.",
+  "keyFile": "overlay/keys/public.xml",
+  "rationale": "ENABLED: this build is published by LeoZhang as an independent derivative, so its one-click updater must verify releases signed with LeoZhang's own key, not upstream's. Sign-Release.ps1 derives the expected private key from this constant.",
+  "risk": "This intentionally ends compatibility with upstream-signed releases. It also requires re-applying after every upstream edit to UpdateValidation.cs; fork_overlay.py does that automatically and fails loudly if the anchor disappears. public.xml is deliberately TRACKED so CI can replay the patch; logs/fork/keys/private.xml stays gitignored and must never be committed.",
   "relatedConstants": [
     "UpdateTrust.PublicKeyXml",
     "UpdateTrust.ApiUrl",

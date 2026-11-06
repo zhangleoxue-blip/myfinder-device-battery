@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "id": "tests-support-url",
+  "enabled": true,
+  "target": "tests/UiMenusTests.cs",
+  "strategy": "regex-replace",
+  "pattern": "const string SupportUrl=\"https://github\\.com/[A-Za-z0-9_.-]+/myfinder-device-battery/blob/[^\"]+/docs/compatibility\\.md\";",
+  "template": "const string SupportUrl=\"https://github.com/zhangleoxue-blip/myfinder-device-battery/blob/fork/main/docs/compatibility.md\";",
+  "rationale": "The in-app compatibility link now points at fork/main in the LeoZhang repository (09-compatibility-link.json). UiMenusTests asserts the exact URL passed to openLink.",
+  "compliance": "Test-only change; the branch name must match this repository's default branch."
+}

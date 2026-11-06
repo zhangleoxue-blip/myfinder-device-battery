@@ -452,7 +452,14 @@ def command_sync(cfg, args):
 
         if action != "conflict":
             overlay = replay_overlay(cfg)
-            if args.build or cfg["sync"].get("autoBuild", False):
+            # A broken anchor must stop the push: otherwise CI would publish a
+            # branch whose upstream sources no longer carry the fork's identity
+            # and release channel, while the binary in a later build would.
+            if isinstance(overlay, dict) and overlay.get("failed", 0):
+                action = "overlay-failed"
+                print("[sync] ERROR: {} overlay patch(es) failed; refusing to "
+                      "mark this sync as successful".format(overlay["failed"]), file=sys.stderr)
+            elif args.build or cfg["sync"].get("autoBuild", False):
                 build = run_build(cfg)
                 if build.get("returncode") not in (0,):
                     action = "build-failed"
