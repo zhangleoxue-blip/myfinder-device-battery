@@ -61,19 +61,27 @@
 - [x] `AppId` / `ZipName` 保持不变（不需要新补丁，也避免破坏更新文件名匹配）。
 - [x] `CREDITS.md`、`FORK-README.md` 打进发行 ZIP；程序内源码/文档链接指向本仓库。
 - [x] 修正三个硬编码上游 URL 的回归测试，保证 CI 全绿。
-- [ ] 见阶段 6：导入签名 Secret 并发布首个自有签名 Release。
+- [x] 见阶段 6：导入签名 Secret 并发布首个自有签名 Release（2026-11-06 已完成）。
 
 **代价**：程序不再接受上游签名包，二进制层的自动同步消失；上游每次改动 `UpdateValidation.cs` 都可能让补丁锚点失效；你需要独立承担全部发布与安全责任。这是用户明确选择「自己开发一款、换署名、公开发布」后的必然后果。
 
-## 阶段 6 — 签名出包并公开发布（流水线已建，待用户执行）
+## 阶段 6 — 签名出包并公开发布（2026-11-06 已完成）
 
 - [x] `.github/workflows/fork-release.yml`：`workflow_dispatch`，全量回归 → `Package.ps1` → `PackageSmoke.ps1` → 校验 AGPL 声明入包 → `Sign-Release.ps1` → 可选发布 Release + `source.zip`。
 - [x] `fork_sync.py` 现在把补丁重放失败判为同步失败，阻止 CI 推送未打补丁的源码。
-- [ ] 首次运行 `publish=false`，下载 artifact 在本机安装验证。
-- [ ] 在仓库 Secrets 添加 `RELEASE_SIGNING_KEY`（值 = `logs/fork/keys/private.xml` 全文）。
-- [ ] 再次运行 `publish=true`，生成 `v<release.json version>` 标签与三件套附件。
-- [ ] 从 Release 下载 ZIP，用包内 `一键安装自启.bat` 安装到本机，运行 `AtkBatteryProbe.exe --self-test` 与真机读数验证。
+- [x] 首次运行 `publish=false`（run `42184736960`），下载 artifact 在本机安装验证。
+- [x] 通过 GitHub Secrets API 用 libsodium sealed box 注入 `RELEASE_SIGNING_KEY`；私钥只在本机内存，未进仓库 / CI 日志 / Release。
+- [x] run `42189790580` 勾 `publish=true` → success，发布
+  [`v1.3.9-beta.7`](https://github.com/zhangleoxue-blip/myfinder-device-battery/releases/tag/v1.3.9-beta.7)
+  （prerelease，tag 指向 `69692c1`），4 个附件：ZIP / `SHA256SUMS.txt` / `SHA256SUMS.txt.sig` / `source.zip`。
+- [x] 端到端验签：公钥验证 `.sig` 通过、自有私钥重签结果一致；16 并发下载 Release ZIP，
+  SHA256 `093a87b3…` 与 `SHA256SUMS.txt` 完全一致；解包 148 文件、AGPL 声明齐全、
+  程序署名 `LeoZhang`、`--self-test` PASS 51。
 - [ ] 决定是否接管阶段 5 之外仍指向上游的「反馈中继」端点（见 `COMPLIANCE.md`）。
+
+**以后每次发新版**：等 `Fork upstream sync` 带入新版本 → 确认补丁重放成功 →
+Actions → `LeoZhang signed release` → 勾 `publish=true`。tag 必须等于 `v` + `release.json`
+的 version；用同一版本号重发不会让用户端提示升级。
 
 ## 当前不建议做的事
 

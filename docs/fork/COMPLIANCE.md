@@ -72,12 +72,25 @@
 ### 发布状态检查表
 
 1. `.github/workflows/fork-release.yml` 已建立：`workflow_dispatch` 构建 → 全量回归 → 打包 → `PackageSmoke` → 校验 AGPL 声明入包 → 签名 → 可选发布。
-2. 首次运行请把 `publish` 留空，下载 artifact 在本机验证；此时产物**未签名**，不能作为正式 Release。
-3. 正式发布前在仓库 Settings → Secrets and variables → Actions 添加 `RELEASE_SIGNING_KEY`，值为 `logs/fork/keys/private.xml` 全文：
-   `gh secret set RELEASE_SIGNING_KEY < logs/fork/keys/private.xml`（用完删除本地命令历史中的引用）。
+2. 首次运行 `publish=false`（run `42184736960`）已下载 artifact 在本机验证；该产物未签名。
+3. `RELEASE_SIGNING_KEY` 已通过 GitHub Secrets API + libsodium sealed box 写入仓库 Secret；
+   值来自 `logs/fork/keys/private.xml`，全程不打印、不进入仓库、CI 日志或 Release 附件。
+   （本机无 `gh` CLI；也可用网页 Settings → Secrets and variables → Actions 添加。）
 4. 发布时 workflow 会强制要求 tag 等于 `v` + `release.json` 的 version，否则一键更新会拒绝该 Release。
 5. Release 必须同时含 `myfinder-device-battery-v<version>-windows-x64.zip`、`SHA256SUMS.txt`、`SHA256SUMS.txt.sig` 三个附件；`UpdateCatalog.ValidateAssets` 会逐个校验名称与 URL。
 6. 私钥绝不进入仓库、CI 日志、artifact 或 Release；workflow 用完后立即删除临时私钥文件。
 7. 每次上游改动被补丁命中的文件，rebase 会失败并自动 abort；`fork_overlay.py` 锚点消失会报错，且 `fork_sync.py` 现在会把补丁失败判为同步失败、阻止 CI 推送。
+
+**首个签名 Release 实际核验（2026-11-06，全部通过）**
+
+- [`v1.3.9-beta.7`](https://github.com/zhangleoxue-blip/myfinder-device-battery/releases/tag/v1.3.9-beta.7)
+  为 prerelease，tag 指向 `69692c1`；附件为 ZIP 13,555,925 B、`SHA256SUMS.txt` 121 B、
+  `SHA256SUMS.txt.sig` 256 B、`source.zip` 1,873,178 B —— 三件套 + 对应源码齐备。
+- 用 `overlay/keys/public.xml` 验证 `SHA256SUMS.txt.sig` 通过；用自有私钥重签得到完全一致的签名，
+  确认签名确属本仓库而非上游密钥。
+- Release ZIP 的 SHA256 `093a87b3…` 与 `SHA256SUMS.txt` 一致；解包 148 文件含全部 4 个
+  AGPL 声明文件；程序集署名 `LeoZhang`；`--self-test` PASS 51。
+- Release notes 明确标注「unofficial modified build published by LeoZhang」、AGPL-3.0-only、
+  非官方构建、非上游密钥签名，并指向 `source.zip` 与发布 tag 的源码。
 
 **一句话**：可以以 AGPL-3.0-only 对外发布，但必须继续开源、公开完整对应源码、保留全部原署名，并明确标注「非官方构建，由 LeoZhang 发布」。
